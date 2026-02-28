@@ -1,27 +1,32 @@
 const express = require("express");
-const fetch = require("node-fetch");
+const axios = require("axios");
+const path = require("path");
+
 const app = express();
+
 const PORT = 3000;
 const PASSWORD = "123456";
 
 // ==============================
-// Middleware kiểm tra mật khẩu
+// Serve Frontend (KHÔNG yêu cầu pass)
 // ==============================
+app.use(express.static(path.join(__dirname, "public")));
 app.use((req, res, next) => {
-  const pass = req.query.pass;
-
-  console.log("==== REQUEST ====");
-  console.log("URL:", req.originalUrl);
-  console.log("PASS:", pass);
-
-  if (pass !== PASSWORD) {
-    console.log("❌ Sai mật khẩu");
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  console.log("✅ Đúng mật khẩu");
+  res.set("Cache-Control", "no-store");
   next();
 });
+// ==============================
+// Middleware kiểm tra mật khẩu (chỉ áp dụng cho API)
+// ==============================
+function checkPassword(req, res, next) {
+  const pass = req.query.pass;
+
+  if (pass !== PASSWORD) {
+    return res.status(403).json({ error: "Forbidden - Sai mật khẩu" });
+  }
+
+  next();
+}
 
 // ==============================
 // Header giả lập trình duyệt
@@ -29,81 +34,57 @@ app.use((req, res, next) => {
 const browserHeaders = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-  "Accept": "application/json, text/plain, */*",
+  Accept: "application/json, text/plain, */*",
   "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
-  "Connection": "keep-alive"
+  Connection: "keep-alive",
 };
 
 // ==============================
 // API lấy danh sách phim
 // ==============================
-app.get("/movies", async (req, res) => {
+app.get("/movies", checkPassword, async (req, res) => {
   const page = req.query.page || 1;
-  const url = `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${page}`;
+  const category = req.query.category || "phim-moi-cap-nhat";
+  const keyword = req.query.keyword || "";
 
-  console.log("📡 Gọi API:", url);
+  let url = "";
+
+  if (keyword) {
+    url = `https://phimapi.com/v1/api/tim-kiem?keyword=${keyword}&page=${page}`;
+  } else {
+    url = `https://phimapi.com/danh-sach/${category}?page=${page}`;
+  }
+
+  console.log("📡 API:", url);
 
   try {
-    const response = await fetch(url, {
-      headers: browserHeaders
+    const response = await axios.get(url, {
+      headers: browserHeaders,
     });
 
-    console.log("Status:", response.status);
-
-    const text = await response.text();
-    console.log("Raw response (1000 ký tự đầu):");
-    console.log(text.substring(0, 1000));
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: "API phimapi trả lỗi",
-        status: response.status
-      });
-    }
-
-    const data = JSON.parse(text);
-    res.json(data);
-
+    res.json(response.data);
   } catch (err) {
-    console.log("🔥 Lỗi thật sự:");
-    console.log(err);
-    res.status(500).json({ error: "Lỗi lấy danh sách phim" });
+    console.log("🔥 Lỗi:", err.message);
+    res.status(500).json({ error: "Lỗi lấy dữ liệu" });
   }
 });
-
 // ==============================
 // API lấy chi tiết phim
 // ==============================
-app.get("/movie/:slug", async (req, res) => {
+app.get("/movie/:slug", checkPassword, async (req, res) => {
   const slug = req.params.slug;
   const url = `https://phimapi.com/phim/${slug}`;
 
   console.log("📡 Gọi API:", url);
 
   try {
-    const response = await fetch(url, {
-      headers: browserHeaders
+    const response = await axios.get(url, {
+      headers: browserHeaders,
     });
 
-    console.log("Status:", response.status);
-
-    const text = await response.text();
-    console.log("Raw response (1000 ký tự đầu):");
-    console.log(text.substring(0, 1000));
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: "API phimapi trả lỗi",
-        status: response.status
-      });
-    }
-
-    const data = JSON.parse(text);
-    res.json(data);
-
+    res.json(response.data);
   } catch (err) {
-    console.log("🔥 Lỗi thật sự:");
-    console.log(err);
+    console.log("🔥 Lỗi:", err.message);
     res.status(500).json({ error: "Lỗi lấy chi tiết phim" });
   }
 });
@@ -111,6 +92,6 @@ app.get("/movie/:slug", async (req, res) => {
 // ==============================
 // Server chạy
 // ==============================
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server chạy tại http://localhost:${PORT}`);
 });
