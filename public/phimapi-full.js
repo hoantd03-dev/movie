@@ -260,9 +260,8 @@ function renderMovieDetail(data) {
   }
 }
 
-
 /* =========================================
-   VIDEO PLAYER
+   VIDEO PLAYER – OPTIMIZED VERSION
 ========================================= */
 
 let hls = null;
@@ -278,6 +277,7 @@ function playEpisode(url, btn = null, epName = null, serverName = null) {
              autoplay
              playsinline
              webkit-playsinline
+             preload="auto"
              style="width:100%;background:black">
       </video>
       <div id="quality-selector" class="quality-box"></div>
@@ -301,32 +301,58 @@ function playEpisode(url, btn = null, epName = null, serverName = null) {
     window.history.replaceState({}, "", "?" + params.toString());
   }
 
-  console.log("Playing:", serverName, epName, url);
+  console.log("🎬 Playing:", serverName, epName);
+  console.log("🔗 Stream URL:", url);
 
   // ===== ƯU TIÊN NATIVE HLS (TV / Safari) =====
   if (video.canPlayType('application/vnd.apple.mpegurl')) {
 
+    console.log("📺 Native HLS detected (TV/Safari)");
+
     video.src = url;
-    video.play();
+    video.play().catch(e => console.log("Autoplay blocked:", e));
     qualityBox.innerHTML = "";
+
     return;
   }
 
-  // ===== HLS.JS (Chrome / PC / Android TV) =====
+  // ===== HLS.JS =====
   if (Hls.isSupported()) {
 
-    if (hls) hls.destroy();
+    if (hls) {
+      hls.destroy();
+      hls = null;
+    }
 
     hls = new Hls({
+
+      // 🔥 TỐI ƯU CHỐNG LAG
+      maxBufferLength: 60,
+      maxMaxBufferLength: 120,
+      maxBufferSize: 60 * 1000 * 1000,
+      backBufferLength: 30,
+
+      // 🔥 Retry network
+      fragLoadingTimeOut: 15000,
+      fragLoadingMaxRetry: 6,
+      manifestLoadingMaxRetry: 4,
+      levelLoadingMaxRetry: 4,
+
+      // 🔥 Performance
+      enableWorker: true,
+      lowLatencyMode: false,
       capLevelToPlayerSize: true,
       startLevel: -1
+
     });
 
     hls.loadSource(url);
     hls.attachMedia(video);
 
+    // ===== LOG EVENT =====
     hls.on(Hls.Events.MANIFEST_PARSED, function () {
 
+      console.log("📦 Manifest loaded");
       const levels = hls.levels;
       const savedQuality = localStorage.getItem("preferredQuality");
 
@@ -344,13 +370,13 @@ function playEpisode(url, btn = null, epName = null, serverName = null) {
         b.addEventListener("click", function () {
 
           const level = parseInt(this.dataset.level);
-
           hls.currentLevel = level;
           localStorage.setItem("preferredQuality", level);
 
           buttons.forEach(x => x.classList.remove("active-quality"));
           this.classList.add("active-quality");
 
+          console.log("🎚 Switched quality:", level);
         });
       });
 
@@ -367,10 +393,62 @@ function playEpisode(url, btn = null, epName = null, serverName = null) {
 
     });
 
+    // ===== ERROR HANDLING =====
+    hls.on(Hls.Events.ERROR, function (event, data) {
+
+      console.log("❌ HLS Error:", data);
+
+      if (data.fatal) {
+
+        switch (data.type) {
+
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            console.log("🔁 Network error → retrying...");
+            hls.startLoad();
+            break;
+
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            console.log("🔁 Media error → recovering...");
+            hls.recoverMediaError();
+            break;
+
+          default:
+            console.log("💥 Fatal error → destroy player");
+            hls.destroy();
+            break;
+        }
+      }
+    });
+
+    // ===== LOG BUFFER =====
+    video.addEventListener("waiting", () => {
+      console.log("⏳ Buffering...");
+    });
+
+    video.addEventListener("playing", () => {
+      console.log("▶ Playing...");
+    });
+
+    video.addEventListener("seeking", () => {
+      console.log("⏩ Seeking...");
+    });
+
   }
-  // ===== FALLBACK MP4 (TV cực cũ) =====
   else {
-    video.src = url.replace(".m3u8", ".mp4");
+
+    console.log("📺 No MSE support → Try native direct HLS first");
+
+    // 🔥 Thử phát m3u8 trực tiếp (TV browser rất hay cần cách này)
+    video.src = url;
+
+    video.addEventListener("error", function () {
+
+      console.log("⚠ Native HLS failed → fallback MP4");
+
+      video.src = url.replace(".m3u8", ".mp4");
+
+    }, { once: true });
+
   }
 }
 
