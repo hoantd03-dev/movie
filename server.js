@@ -1,3 +1,5 @@
+// 
+
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
@@ -8,20 +10,22 @@ const PORT = 3000;
 const PASSWORD = "123456";
 
 // ==============================
-// Serve Frontend (KHÔNG yêu cầu pass)
+// Serve Frontend
 // ==============================
 app.use(express.static(path.join(__dirname, "public")));
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
+
 // ==============================
-// Middleware kiểm tra mật khẩu (chỉ áp dụng cho API)
+// Middleware kiểm tra mật khẩu
 // ==============================
 function checkPassword(req, res, next) {
   const pass = req.query.pass;
 
   if (pass !== PASSWORD) {
+    console.log("⛔ Sai mật khẩu từ IP:", req.ip);
     return res.status(403).json({ error: "Forbidden - Sai mật khẩu" });
   }
 
@@ -40,6 +44,62 @@ const browserHeaders = {
 };
 
 // ==============================
+// Axios instance có timeout
+// ==============================
+const api = axios.create({
+  timeout: 10000, // 10 giây
+  headers: browserHeaders,
+});
+
+// ==============================
+// Interceptor log thời gian
+// ==============================
+api.interceptors.request.use((config) => {
+  config.metadata = { startTime: new Date() };
+  console.log("\n==============================");
+  console.log("👉 CALL API:", config.url);
+  console.log("🕒 Time:", new Date().toISOString());
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => {
+    const duration =
+      new Date() - response.config.metadata.startTime;
+
+    console.log("✅ SUCCESS:", response.config.url);
+    console.log("📊 Status:", response.status);
+    console.log("⏱ Duration:", duration + "ms");
+    console.log("==============================\n");
+
+    return response;
+  },
+  (error) => {
+    if (error.config && error.config.metadata) {
+      const duration =
+        new Date() - error.config.metadata.startTime;
+
+      console.log("❌ ERROR:", error.config.url);
+      console.log("⏱ Duration:", duration + "ms");
+    }
+
+    if (error.code === "ECONNABORTED") {
+      console.log("⛔ TIMEOUT - API phản hồi quá chậm");
+    }
+
+    if (error.response) {
+      console.log("📊 Status:", error.response.status);
+      console.log("📦 Data:", error.response.data);
+    }
+
+    console.log("🔥 Message:", error.message);
+    console.log("==============================\n");
+
+    return Promise.reject(error);
+  }
+);
+
+// ==============================
 // API lấy danh sách phim
 // ==============================
 app.get("/movies", checkPassword, async (req, res) => {
@@ -55,19 +115,17 @@ app.get("/movies", checkPassword, async (req, res) => {
     url = `https://phimapi.com/danh-sach/${category}?page=${page}`;
   }
 
-  console.log("📡 API:", url);
-
   try {
-    const response = await axios.get(url, {
-      headers: browserHeaders,
-    });
-
+    const response = await api.get(url);
     res.json(response.data);
   } catch (err) {
-    console.log("🔥 Lỗi:", err.message);
-    res.status(500).json({ error: "Lỗi lấy dữ liệu" });
+    res.status(500).json({
+      error: "Lỗi lấy dữ liệu",
+      message: err.message,
+    });
   }
 });
+
 // ==============================
 // API lấy chi tiết phim
 // ==============================
@@ -75,18 +133,47 @@ app.get("/movie/:slug", checkPassword, async (req, res) => {
   const slug = req.params.slug;
   const url = `https://phimapi.com/phim/${slug}`;
 
-  console.log("📡 Gọi API:", url);
-
   try {
-    const response = await axios.get(url, {
-      headers: browserHeaders,
-    });
-
+    const response = await api.get(url);
     res.json(response.data);
   } catch (err) {
-    console.log("🔥 Lỗi:", err.message);
-    res.status(500).json({ error: "Lỗi lấy chi tiết phim" });
+    res.status(500).json({
+      error: "Lỗi lấy chi tiết phim",
+      message: err.message,
+    });
   }
+});
+
+// ==============================
+// Route kiểm tra API sống hay chết
+// ==============================
+app.get("/health", async (req, res) => {
+  try {
+    const start = Date.now();
+    await api.get("https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1");
+    const duration = Date.now() - start;
+
+    res.json({
+      status: "API OK",
+      responseTime: duration + "ms",
+    });
+  } catch (err) {
+    res.json({
+      status: "API FAIL",
+      error: err.message,
+    });
+  }
+});
+
+// ==============================
+// Bắt lỗi hệ thống
+// ==============================
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
 });
 
 // ==============================
