@@ -266,26 +266,46 @@ function renderMovieDetail(data) {
 
 let hls = null;
 
-function playEpisode(url, btn = null, epName = null, serverName = null) {
+function playEpisode(url, btn, epName, serverName) {
 
-  const videoContainer = document.getElementById("video-player");
+  var videoContainer = document.getElementById("video-player");
 
-  videoContainer.innerHTML = `
-    <div class="player-wrapper">
-      <video id="video"
-             controls
-             autoplay
-             playsinline
-             webkit-playsinline
-             preload="auto"
-             style="width:100%;background:black">
-      </video>
-      <div id="quality-selector" class="quality-box"></div>
-    </div>
-  `;
+  videoContainer.innerHTML =
+    '<div style="position:relative;background:black;">' +
+      '<video id="video" ' +
+        'controls autoplay playsinline webkit-playsinline preload="auto" ' +
+        'style="width:100%;background:black;">' +
+      '</video>' +
 
-  const video = document.getElementById("video");
-  const qualityBox = document.getElementById("quality-selector");
+      // 🔥 NÚT TUA -10s
+      '<button id="back10" ' +
+        'style="position:absolute;bottom:60px;left:20px;' +
+        'padding:10px;background:rgba(0,0,0,0.6);color:white;' +
+        'border:none;font-size:16px;">⏪ 10s</button>' +
+
+      // 🔥 NÚT TUA +10s
+      '<button id="forward10" ' +
+        'style="position:absolute;bottom:60px;right:20px;' +
+        'padding:10px;background:rgba(0,0,0,0.6);color:white;' +
+        'border:none;font-size:16px;">10s ⏩</button>' +
+
+      '<div id="quality-selector" class="quality-box" ' +
+        'style="position:absolute;top:10px;right:10px;"></div>' +
+    '</div>';
+
+  var video = document.getElementById("video");
+  var qualityBox = document.getElementById("quality-selector");
+
+  // ===== TUA 10s =====
+  document.getElementById("back10").onclick = function () {
+    if (!video.duration) return;
+    video.currentTime = Math.max(0, video.currentTime - 10);
+  };
+
+  document.getElementById("forward10").onclick = function () {
+    if (!video.duration) return;
+    video.currentTime = Math.min(video.duration, video.currentTime + 10);
+  };
 
   // ===== Highlight tập =====
   document.querySelectorAll(".episode-list button")
