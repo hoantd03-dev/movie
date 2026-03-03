@@ -9,6 +9,7 @@ const app = express();
 const PORT = 3000;
 const PASSWORD = "123456";
 
+
 // ==============================
 // Serve Frontend
 // ==============================
@@ -174,6 +175,81 @@ process.on("unhandledRejection", (err) => {
 
 process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+// ==============================
+// PROXY HLS TỐI ƯU CHO TERMUX
+// ==============================
+
+app.get("/proxy", async (req, res) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl) return res.status(400).send("Missing url");
+
+  try {
+    // ===== M3U8 =====
+    if (targetUrl.includes(".m3u8")) {
+      const response = await axios.get(targetUrl, {
+        headers: browserHeaders,
+        timeout: 15000,
+      });
+
+      const baseUrl = targetUrl.substring(
+        0,
+        targetUrl.lastIndexOf("/") + 1
+      );
+
+      const modified = response.data.replace(
+        /^(?!#)(.*)$/gm,
+        (line) => {
+          if (!line.trim()) return line;
+
+          if (line.endsWith(".ts") || line.includes(".ts?")) {
+            const absolute = line.startsWith("http")
+              ? line
+              : baseUrl + line;
+
+            return `http://${req.headers.host}/proxy?url=${encodeURIComponent(
+              absolute
+            )}`;
+          }
+
+          return line;
+        }
+      );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.apple.mpegurl"
+      );
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Connection", "keep-alive");
+
+      return res.send(modified);
+    }
+
+    // ===== TS STREAM (KHÔNG CACHE DISK) =====
+    if (targetUrl.includes(".ts")) {
+      const response = await axios.get(targetUrl, {
+        responseType: "stream",
+        headers: browserHeaders,
+        timeout: 20000,
+      });
+
+      res.setHeader(
+        "Content-Type",
+        response.headers["content-type"] || "video/mp2t"
+      );
+      res.setHeader("Connection", "keep-alive");
+
+      response.data.pipe(res);
+      return;
+    }
+
+    res.status(400).send("Unsupported format");
+  } catch (err) {
+    console.error("🔥 Proxy error:", err.message);
+    res.status(500).send("Proxy failed");
+  }
 });
 
 // ==============================
