@@ -192,6 +192,7 @@ function renderMovieDetail(data) {
       <p>${movie.content || ""}</p>
 
       <div id="video-player"></div>
+      
 
       <div class="server-wrapper">
         ${episodes.map((server, sIndex) => `
@@ -270,31 +271,43 @@ function playEpisode(url, btn, epName, serverName) {
 
   var videoContainer = document.getElementById("video-player");
 
+if (!document.getElementById("video")) {
+
   videoContainer.innerHTML =
     '<div style="position:relative;background:black;">' +
-      '<video id="video" ' +
-        'controls autoplay playsinline webkit-playsinline preload="auto" ' +
-        'style="width:100%;background:black;">' +
-      '</video>' +
+      '<video id="video" controls autoplay playsinline webkit-playsinline preload="auto" style="width:100%;background:black;"></video>' +
 
-      // 🔥 NÚT TUA -10s
-      '<button id="back10" ' +
-        'style="position:absolute;bottom:60px;left:20px;' +
-        'padding:10px;background:rgba(0,0,0,0.6);color:white;' +
-        'border:none;font-size:16px;">⏪ 10s</button>' +
+      '<button id="pipBtn" style="position:absolute;top:10px;left:10px;padding:8px;background:rgba(0,0,0,0.6);color:white;border:none;">📺 PiP</button>' +
 
-      // 🔥 NÚT TUA +10s
-      '<button id="forward10" ' +
-        'style="position:absolute;bottom:60px;right:20px;' +
-        'padding:10px;background:rgba(0,0,0,0.6);color:white;' +
-        'border:none;font-size:16px;">10s ⏩</button>' +
+      '<button id="back10" style="position:absolute;bottom:60px;left:20px;padding:10px;background:rgba(0,0,0,0.6);color:white;border:none;">⏪ 10s</button>' +
 
-      '<div id="quality-selector" class="quality-box" ' +
-        'style="position:absolute;top:10px;right:10px;"></div>' +
+      '<button id="forward10" style="position:absolute;bottom:60px;right:20px;padding:10px;background:rgba(0,0,0,0.6);color:white;border:none;">10s ⏩</button>' +
+
+      '<div id="quality-selector" class="quality-box" style="position:absolute;top:10px;right:10px;"></div>' +
     '</div>';
+
+}
 
   var video = document.getElementById("video");
   var qualityBox = document.getElementById("quality-selector");
+
+  const pipBtn = document.getElementById("pipBtn");
+
+  if (pipBtn) {
+    pipBtn.onclick = async () => {
+      try {
+
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else {
+          await video.requestPictureInPicture();
+        }
+
+      } catch (e) {
+        console.log("PiP không hỗ trợ:", e);
+      }
+    };
+  }
 
   // ===== TUA 10s =====
   document.getElementById("back10").onclick = function () {
@@ -303,9 +316,32 @@ function playEpisode(url, btn, epName, serverName) {
   };
 
   document.getElementById("forward10").onclick = function () {
+    console.log("clicked");
     if (!video.duration) return;
     video.currentTime = Math.min(video.duration, video.currentTime + 10);
   };
+
+    if (!window.keyboardAdded) {
+
+    document.addEventListener("keydown", function (e) {
+
+      const video = document.getElementById("video");
+      if (!video || !video.duration) return;
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        video.currentTime -= 10;
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        video.currentTime += 10;
+      }
+
+    });
+
+    window.keyboardAdded = true;
+  }
 
   // ===== Highlight tập =====
   document.querySelectorAll(".episode-list button")
@@ -324,15 +360,19 @@ function playEpisode(url, btn, epName, serverName) {
   console.log("🎬 Playing:", serverName, epName);
   console.log("🔗 Stream URL:", url);
 
-  // ===== ƯU TIÊN NATIVE HLS (TV / Safari) =====
-  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+// ===== NATIVE CHỈ KHI KHÔNG CÓ HLS.JS =====
+  if (!Hls.isSupported() &&
+      video.canPlayType('application/vnd.apple.mpegurl')) {
 
-    console.log("📺 Native HLS detected (TV/Safari)");
+    console.log("📺 Using Native HLS (no MSE support)");
 
     video.src = url;
-    video.play().catch(e => console.log("Autoplay blocked:", e));
-    qualityBox.innerHTML = "";
 
+    video.addEventListener("loadedmetadata", function () {
+      video.play().catch(() => {});
+    }, { once: true });
+
+    qualityBox.innerHTML = "";
     return;
   }
 
@@ -345,6 +385,10 @@ function playEpisode(url, btn, epName, serverName) {
     }
 
     hls = new Hls({
+      
+      maxFragLookUpTolerance: 0.1,
+      lowLatencyMode: true,
+      backBufferLength: 90,
 
       // 🔥 TỐI ƯU CHỐNG LAG
       maxBufferLength: 60,
@@ -583,4 +627,10 @@ document.getElementById("searchForm").addEventListener("submit", function (e) {
   }
 
   window.location.search = params.toString();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    e.preventDefault();
+  }
 });
