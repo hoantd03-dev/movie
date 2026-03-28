@@ -468,29 +468,23 @@ video.addEventListener("loadedmetadata", () => {
     }
 
     hls = new Hls({
-      
-      maxFragLookUpTolerance: 0.1,
-      lowLatencyMode: true,
-      backBufferLength: 90,
+        // Buffer
+        maxBufferLength: 120,
+        maxMaxBufferLength: 240,
+        maxBufferSize: 100 * 1000 * 1000,
+        backBufferLength: 60,
 
-      // 🔥 TỐI ƯU CHỐNG LAG
-      maxBufferLength: 60,
-      maxMaxBufferLength: 120,
-      maxBufferSize: 60 * 1000 * 1000,
-      backBufferLength: 30,
+        // Retry khi load chậm
+        fragLoadingTimeOut: 20000,
+        fragLoadingMaxRetry: 8,
+        fragLoadingRetryDelay: 1000,
+        fragLoadingMaxRetryTimeout: 64000,
+        manifestLoadingMaxRetry: 4,
+        levelLoadingMaxRetry: 4,
 
-      // 🔥 Retry network
-      fragLoadingTimeOut: 15000,
-      fragLoadingMaxRetry: 6,
-      manifestLoadingMaxRetry: 4,
-      levelLoadingMaxRetry: 4,
-
-      // 🔥 Performance
-      enableWorker: true,
-      lowLatencyMode: false,
-      capLevelToPlayerSize: true,
-      startLevel: -1
-
+        // Performance
+        enableWorker: true,
+        lowLatencyMode: false,
     });
 
     hls.loadSource(url);
@@ -717,3 +711,12 @@ document.addEventListener("keydown", function (e) {
     e.preventDefault();
   }
 });
+
+setInterval(() => {
+    if (video.buffered.length > 0) {
+        const buffered = video.buffered.end(0);
+        const duration = video.duration;
+        const percent = (buffered / duration * 100).toFixed(1);
+        console.log(`Đã buffer: ${percent}%`);
+    }
+}, 1000);
