@@ -113,6 +113,41 @@ function normalizeData(data, page = 1) {
   return { items: [], pagination: { currentPage: 1, totalPages: 1 } };
 }
 
+async function applyFilter(){
+
+const type = document.getElementById("type").value;
+const genre = document.getElementById("genre").value;
+const country = document.getElementById("country").value;
+const year = document.getElementById("year").value;
+const keyword = document.getElementById("search").value;
+
+let data;
+
+if(keyword){
+data = await searchMovies(keyword);
+}
+else if(type){
+data = await getList(type);
+}
+else if(genre){
+data = await getCategoryDetail(genre);
+}
+else if(country){
+data = await getCountryDetail(country);
+}
+else if(year){
+data = await getByYear(year);
+}
+else{
+data = await getLatestMovies();
+}
+
+renderMovies(data.data.items);
+
+}
+
+
+
 /* =========================================
    RENDER MOVIES LIST
    ========================================= */
@@ -261,6 +296,8 @@ function renderMovieDetail(data) {
   }
 }
 
+
+
 /* =========================================
    VIDEO PLAYER – OPTIMIZED VERSION
 ========================================= */
@@ -287,8 +324,54 @@ if (!document.getElementById("video")) {
     '</div>';
 
 }
+  const video = document.getElementById("video");
 
-  var video = document.getElementById("video");
+  let lastSave = 0;
+
+  function saveProgress(slug, episode){
+
+    video.addEventListener("timeupdate", () => {
+
+      if(video.currentTime - lastSave < 5) return;
+
+      lastSave = video.currentTime;
+
+      const data = {
+        slug: slug,
+        episode: episode,
+        time: video.currentTime
+      };
+
+      localStorage.setItem("movie_progress", JSON.stringify(data));
+
+    });
+
+  }
+
+  function resumeProgress(slug, episode){
+
+  const data = JSON.parse(localStorage.getItem("movie_progress"));
+
+  if(!data) return;
+
+  if(data.slug === slug && data.episode === episode){
+
+    video.currentTime = data.time;
+
+  }
+
+}
+  
+  
+const slug = window.currentMovieSlug || "movie";
+const episode = epName;
+
+saveProgress(slug, episode);
+
+video.addEventListener("loadedmetadata", () => {
+  resumeProgress(slug, episode);
+});
+
   var qualityBox = document.getElementById("quality-selector");
 
   const pipBtn = document.getElementById("pipBtn");

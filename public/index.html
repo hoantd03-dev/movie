@@ -14,19 +14,45 @@
     <div class="logo">
       <a href="/">🎬 Movie Server</a>
     </div>
+    <div class="filters">
 
-    <form id="searchForm" class="search-bar">
-      <select id="categorySelect">
-        <option value="phim-moi-cap-nhat">Phim mới</option>
-        <option value="phim-le">Phim lẻ</option>
-        <option value="phim-bo">Phim bộ</option>
-        <option value="tv-shows">TV Shows</option>
+      <select id="type">
+      <option value="">Loại phim</option>
+      <option value="phim-le">Phim lẻ</option>
+      <option value="phim-bo">Phim bộ</option>
+      <option value="hoat-hinh">Anime</option>
       </select>
 
-      <input type="text" id="searchInput" placeholder="Tìm phim..." />
-      <button type="submit">🔍</button>
-    </form>
+      <select id="genre">
+      <option value="">Thể loại</option>
+      <option value="hanh-dong">Hành động</option>
+      <option value="tinh-cam">Tình cảm</option>
+      <option value="hai-huoc">Hài</option>
+      <option value="kinh-di">Kinh dị</option>
+      </select>
+
+      <select id="country">
+      <option value="">Quốc gia</option>
+      <option value="han-quoc">Hàn Quốc</option>
+      <option value="trung-quoc">Trung Quốc</option>
+      <option value="my">Mỹ</option>
+      <option value="nhat-ban">Nhật Bản</option>
+      </select>
+
+      <select id="year">
+      <option value="">Năm</option>
+      <option>2025</option>
+      <option>2024</option>
+      <option>2023</option>
+      </select>
+
+      <input id="search" placeholder="Tìm phim">
+
+      <button onclick="applyFilter()">Lọc</button>
+
+    </div>
   </header>
+
 
   <!-- MAIN CONTENT -->
   <main class="container">
@@ -34,7 +60,10 @@
     <div id="movie-list"></div>
     <div id="pagination"></div>
     <div id="movie-detail" style="display:none;"></div>
+
+    
   </main>
+
 
   <!-- SCRIPT -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>

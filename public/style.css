@@ -36,61 +36,124 @@ body {
   color: #ff4757;
   letter-spacing: 1px;
 }
-
 /* ===============================
-   SEARCH BAR
+   HEADER FILTER
 ================================= */
 
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #111827;
-  padding: 8px 12px;
-  border-radius: 40px;
-  border: 1px solid #1f2937;
-  transition: 0.3s;
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 20px;
+  background:#0f172a;
+  border-bottom:1px solid #1f2937;
 }
 
-.search-bar:focus-within {
-  border-color: #ff4757;
-  box-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+
+/* ===============================
+   FILTER BAR
+================================= */
+
+.filters{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#111827;
+  padding:8px 12px;
+  border-radius:40px;
+  border:1px solid #1f2937;
+  transition:0.3s;
+  flex-wrap:wrap;
 }
 
-.search-bar select {
-  background: transparent;
-  color: #ddd;
-  border: none;
-  outline: none;
-  font-size: 14px;
+.filters:focus-within{
+  border-color:#ff4757;
+  box-shadow:0 0 10px rgba(255,71,87,0.3);
 }
 
-.search-bar input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #f5f6fa;
-  font-size: 14px;
-  width: 240px;
+
+/* ===============================
+   SELECT
+================================= */
+
+.filters select{
+  background:#1f2937;
+  color:#ddd;
+  border:1px solid #374151;
+  outline:none;
+  font-size:13px;
+  padding:6px 10px;
+  border-radius:20px;
+  cursor:pointer;
+  transition:0.25s;
 }
 
-.search-bar input::placeholder {
-  color: #6b7280;
+.filters select:hover{
+  border-color:#ff4757;
 }
 
-.search-bar button {
-  background: #ff4757;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  color: white;
-  font-weight: 600;
-  transition: 0.3s;
+.filters select:focus{
+  border-color:#ff4757;
+  box-shadow:0 0 5px rgba(255,71,87,0.4);
 }
 
-.search-bar button:hover {
-  background: #ff2e43;
+
+/* ===============================
+   INPUT SEARCH
+================================= */
+
+.filters input{
+  background:transparent;
+  border:none;
+  outline:none;
+  color:#f5f6fa;
+  font-size:14px;
+  width:200px;
+}
+
+.filters input::placeholder{
+  color:#6b7280;
+}
+
+#continue-watch{
+display:grid;
+grid-template-columns:repeat(auto-fill,160px);
+gap:14px;
+margin-bottom:40px;
+}
+
+
+/* ===============================
+   BUTTON
+================================= */
+
+.filters button{
+  background:#ff4757;
+  border:none;
+  padding:6px 14px;
+  border-radius:20px;
+  cursor:pointer;
+  color:white;
+  font-weight:600;
+  transition:0.3s;
+}
+
+.filters button:hover{
+  background:#ff2e43;
+  transform:translateY(-1px);
+  box-shadow:0 4px 10px rgba(255,71,87,0.4);
+}
+
+
+/* ===============================
+   LOGO
+================================= */
+
+.logo a{
+  color:#ff4757;
+  font-weight:700;
+  font-size:18px;
+  text-decoration:none;
 }
 
 /* ===============================
