@@ -255,6 +255,31 @@ app.get("/proxy", async (req, res) => {
 // ==============================
 // Server chạy
 // ==============================
+const os = require("os");
+
+function getLocalIPs() {
+  const interfaces = os.networkInterfaces();
+  const ips = [];
+
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        ips.push({ name, address: iface.address });
+      }
+    }
+  }
+  return ips;
+}
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server chạy tại http://localhost:${PORT}`);
+
+  const ips = getLocalIPs();
+  if (ips.length) {
+    console.log("📡 IP nội bộ:");
+    ips.forEach(({ name, address }) => {
+      console.log(`   [${name}] http://${address}:${PORT}`);
+    });
+  } else {
+    console.log("⚠️ Không tìm thấy IP nội bộ");
+  }
 });
