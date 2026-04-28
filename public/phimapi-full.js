@@ -330,6 +330,7 @@ function renderMovieDetail(data) {
   const movieDetail = document.getElementById("movie-detail");
   const pagination  = document.getElementById("pagination");
   const pageTitle   = document.getElementById("page-title");
+  document.title = data.movie.name + " | Movie Server";
 
   movieList.style.display   = "none";
   pagination.style.display  = "none";
@@ -340,6 +341,7 @@ function renderMovieDetail(data) {
 
   pageTitle.innerText     = movie.name;
   window.currentMovieSlug = movie.slug;
+  window.currentMovieName = movie.name; // ← thêm cạnh currentMovieSlug
 
   const params        = new URLSearchParams(window.location.search);
   const currentEp     = params.get("ep");
@@ -533,10 +535,13 @@ video.addEventListener("loadedmetadata", () => {
     params.set("ep", epName);
     params.set("server", serverName);
     window.history.replaceState({}, "", "?" + params.toString());
+    document.title = `${epName} - ${window.currentMovieName} | Movie Server`; // ← thêm dòng này 
   }
 
   console.log("🎬 Playing:", serverName, epName);
   console.log("🔗 Stream URL:", url);
+
+  
 
 // ===== NATIVE CHỈ KHI KHÔNG CÓ HLS.JS =====
   if (!Hls.isSupported() &&
@@ -808,5 +813,6 @@ if (keyword) {
 const { items, pagination } = normalizeData(rawData, opts.page);
 renderMovies(items);
 renderPagination(pagination);
-
+// Trong phần router, sau khi có params
+document.title = getPageTitle(params) + " | Movie Server";
 });
