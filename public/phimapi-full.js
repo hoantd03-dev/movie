@@ -814,5 +814,5 @@ const { items, pagination } = normalizeData(rawData, opts.page);
 renderMovies(items);
 renderPagination(pagination);
 // Trong phần router, sau khi có params
-document.title = getPageTitle(params) + (opts.page > 1 ? ` / Trang ${opts.page}` : "") + " | Movie Server";
+document.title = getPageTitle(params) + (opts.page >= 1 ? ` / Trang ${opts.page}` : "") + " | Movie Server";
 });
