@@ -472,6 +472,21 @@ video.addEventListener("loadedmetadata", () => {
   if (saved) video.currentTime = parseFloat(saved);
 }, { once: true });
 
+// ===== CLICK VÀO VIDEO ĐỂ PLAY/PAUSE (trừ vùng thanh điều khiển gốc) =====
+video.addEventListener("click", (e) => {
+  const rect = video.getBoundingClientRect();
+  const clickY = e.clientY - rect.top;
+  const controlBarHeight = 45; // vùng thanh điều khiển gốc ở đáy video, tránh double-toggle
+
+  if (clickY > rect.height - controlBarHeight) return; // click vào thanh điều khiển gốc → để browser tự xử lý
+
+  if (video.paused) {
+    video.play();
+  } else {
+    video.pause();
+  }
+}, { signal });
+
   var qualityBox = document.getElementById("quality-selector");
 
   const pipBtn = document.getElementById("pipBtn");
@@ -736,6 +751,17 @@ function goPage(page) {
    ========================================= */
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const searchForm = document.getElementById("search-form");
+  if (searchForm) {
+    searchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      applyFilter();
+    });
+  }
+
+  await initFilters();
+  // ... phần code cũ giữ nguyên bên dưới
+
   await initFilters(); // 🔥 thêm dòng này
   const params  = new URLSearchParams(window.location.search);
   const slug    = params.get("slug");
