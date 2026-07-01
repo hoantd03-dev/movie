@@ -44,12 +44,25 @@ const browserHeaders = {
   Connection: "keep-alive",
 };
 
+const http = require("http");
+const https = require("https");
+
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 100 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 100 });
+
 // ==============================
 // Axios instance có timeout
 // ==============================
+// const api = axios.create({
+//   timeout: 10000, // 10 giây
+//   headers: browserHeaders,
+// });
+// Sửa 01/07
 const api = axios.create({
-  timeout: 10000, // 10 giây
+  timeout: 10000,
   headers: browserHeaders,
+  httpAgent,
+  httpsAgent,
 });
 
 // ==============================
@@ -191,6 +204,8 @@ app.get("/proxy", async (req, res) => {
       const response = await axios.get(targetUrl, {
         headers: browserHeaders,
         timeout: 15000,
+        httpAgent,      // thêm dòng này
+        httpsAgent,     // thêm dòng này
       });
 
       const baseUrl = targetUrl.substring(
@@ -229,10 +244,30 @@ app.get("/proxy", async (req, res) => {
 
     // ===== TS STREAM (KHÔNG CACHE DISK) =====
     if (targetUrl.includes(".ts")) {
+      // const response = await axios.get(targetUrl, {
+      //   responseType: "stream",
+      //   headers: browserHeaders,
+      //   timeout: 20000,
+      // });
+
+      // res.setHeader(
+      //   "Content-Type",
+      //   response.headers["content-type"] || "video/mp2t"
+      // );
+      // res.setHeader("Connection", "keep-alive");
+
+      // response.data.pipe(res);
+      // return;
+      const controller = new AbortController();
+      req.on("close", () => controller.abort());   // hủy khi client ngắt
+
       const response = await axios.get(targetUrl, {
         responseType: "stream",
         headers: browserHeaders,
         timeout: 20000,
+        signal: controller.signal,   // thêm dòng này
+        httpAgent,                   // thêm dòng này
+        httpsAgent,                  // thêm dòng này
       });
 
       res.setHeader(
