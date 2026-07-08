@@ -438,13 +438,11 @@ if (!document.getElementById("video")) {
   '<div style="position:relative;background:black;">' +
     '<video id="video" controls autoplay playsinline webkit-playsinline preload="auto" style="width:100%;background:black;"></video>' +
 
-    '<div id="clickCatcher" style="position:absolute;top:0;left:0;right:0;bottom:45px;cursor:pointer;"></div>' +
-
     '<button id="pipBtn" style="position:absolute;top:10px;left:10px;padding:8px;background:rgba(0,0,0,0.6);color:white;border:none;">📺 PiP</button>' +
 
-    '<button id="back10" style="position:absolute;bottom:60px;left:20px;padding:10px;background:rgba(0,0,0,0.6);color:white;border:none;">⏪ 10s</button>' +
+    '<button id="back10" style="position:absolute;bottom:100px;left:20px;padding:10px;background:rgba(0,0,0,0.6);color:white;border:none;">⏪ 10s</button>' +
 
-    '<button id="forward10" style="position:absolute;bottom:60px;right:20px;padding:10px;background:rgba(0,0,0,0.6);color:white;border:none;">10s ⏩</button>' +
+    '<button id="forward10" style="position:absolute;bottom:100px;right:20px;padding:10px;background:rgba(0,0,0,0.6);color:white;border:none;">10s ⏩</button>' +
 
     '<div id="quality-selector" class="quality-box" style="position:absolute;top:10px;right:10px;"></div>' +
   '</div>';
@@ -474,17 +472,7 @@ video.addEventListener("loadedmetadata", () => {
   if (saved) video.currentTime = parseFloat(saved);
 }, { once: true });
 
-// ===== CLICK VÀO VIDEO ĐỂ PLAY/PAUSE (trừ vùng thanh điều khiển gốc) =====
-  const clickCatcher = document.getElementById("clickCatcher");
-  if (clickCatcher) {
-    clickCatcher.addEventListener("click", () => {
-      if (video.paused) {
-        video.play();
-      } else {
-        video.pause();
-      }
-    }, { signal });
-  }
+
 
   var qualityBox = document.getElementById("quality-selector");
 
