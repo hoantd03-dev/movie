@@ -97,6 +97,28 @@ function convertToWebp(url) {
   return "https://img.phimapi.com/" + url;
 }
 
+function normalizeList(res) {
+  if (!res) return [];
+
+  // Trường hợp 1: trả thẳng mảng
+  if (Array.isArray(res)) return res;
+
+  // Trường hợp 2: { data: [...] }
+  if (Array.isArray(res.data)) return res.data;
+
+  // Trường hợp 3: { items: [...] }
+  if (Array.isArray(res.items)) return res.items;
+
+  // Trường hợp 4: { data: { items: [...] } }  ← rất phổ biến ở API dạng này
+  if (Array.isArray(res.data?.items)) return res.data.items;
+
+  // Trường hợp 5: { data: { data: [...] } }
+  if (Array.isArray(res.data?.data)) return res.data.data;
+
+  console.warn("normalizeList: không nhận diện được cấu trúc", res);
+  return [];
+}
+
 /* =========================================
    DATA NORMALIZER
    ========================================= */
@@ -192,12 +214,17 @@ function syncFilters() {
   });
 }
 
-function renderSelect(id, list, isYear = false) {
+  function renderSelect(id, list, isYear = false) {
   const el = document.getElementById(id);
 
   el.innerHTML = `<option value="">${el.dataset.placeholder || "-- Chọn --"}</option>`;
 
-  list.forEach(item => {
+  if (!Array.isArray(list)) {
+    console.warn(`renderSelect: "${id}" nhận dữ liệu không phải mảng`, list);
+    return;
+  }
+
+  list.forEach(item =>{
     const option = document.createElement("option");
 
     if (isYear) {
@@ -229,8 +256,8 @@ async function initFilters() {
     // console.log("Countries raw:", countriesRes);
 
     // ⚠️ phimapi trả dạng data.items
-    const genres = genresRes || [];
-    const countries = countriesRes || [];
+    const genres = normalizeList(genresRes);
+    const countries = normalizeList(countriesRes);
 
     renderSelect("genre", genres);
     renderSelect("country", countries);
@@ -749,7 +776,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initFilters();
   // ... phần code cũ giữ nguyên bên dưới
 
-  await initFilters(); // 🔥 thêm dòng này
+  // await initFilters(); // 🔥 thêm dòng này
   const params  = new URLSearchParams(window.location.search);
   const slug    = params.get("slug");
   const keyword = params.get("keyword");
