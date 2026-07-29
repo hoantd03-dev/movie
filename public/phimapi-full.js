@@ -269,10 +269,19 @@ async function initFilters() {
 
     // TYPE (có thể giữ fix hoặc cũng render)
     renderSelect("type", [
-      { name: "Phim lẻ", slug: "phim-le" },
-      { name: "Phim bộ", slug: "phim-bo" },
-      { name: "Anime",  slug: "hoat-hinh" }
-    ]);
+  { name: "Phim Mới", slug: "phim-moi" },
+  { name: "Phim Bộ", slug: "phim-bo" },
+  { name: "Phim Lẻ", slug: "phim-le" },
+  { name: "Shows", slug: "tv-shows" },
+  { name: "Hoạt Hình", slug: "hoat-hinh" },
+  { name: "Phim Vietsub", slug: "phim-vietsub" },
+  { name: "Phim Thuyết Minh", slug: "phim-thuyet-minh" },
+  { name: "Phim Lồng Tiếng", slug: "phim-long-tieng" },
+  { name: "Phim Bộ Đang Chiếu", slug: "phim-bo-dang-chieu" },
+  { name: "Phim Bộ Đã Hoàn Thành", slug: "phim-bo-hoan-thanh" },
+  { name: "Subteam", slug: "subteam" },
+  { name: "Phim Chiếu Rạp", slug: "phim-chieu-rap" }
+]);
 
     // sync lại value từ URL sau khi render xong
     syncFilters();

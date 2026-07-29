@@ -126,7 +126,7 @@ app.get("/movies", checkPassword, async (req, res) => {
   if (keyword) {
     url = `https://phimapi.com/v1/api/tim-kiem?keyword=${keyword}&page=${page}`;
   } else {
-    url = `https://phimapi.com/danh-sach/${category}?page=${page}`;
+    url = `https://phimapi.com/v1/api/danh-sach/${category}?page=${page}`;
   }
 
   try {
