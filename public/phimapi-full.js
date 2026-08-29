@@ -465,9 +465,18 @@ let hls = null;
 let progressController = null;  // ← THÊM VÀO ĐÂY
 
 function playEpisode(url, btn, epName, serverName) {
-   window.location.href = "vlc://" + url;
+  const withoutScheme = url.replace(/^https?:\/\//, "");
+  const scheme = url.startsWith("https") ? "https" : "http";
+  const intentUrl =
+    `intent://${withoutScheme}#Intent;` +
+    `scheme=${scheme};` +
+    `package=org.videolan.vlc;` +
+    `type=video/*;` +
+    `S.title=${encodeURIComponent((epName || "") + " - " + (serverName || ""))};` +
+    `end`;
 
-  // Vẫn giữ phần highlight tập + lưu URL để giao diện đồng bộ
+  window.location.href = intentUrl;
+
   document.querySelectorAll(".episode-list button")
     .forEach(b => b.classList.remove("active-ep"));
   if (btn) btn.classList.add("active-ep");
@@ -479,7 +488,7 @@ function playEpisode(url, btn, epName, serverName) {
     window.history.replaceState({}, "", "?" + params.toString());
   }
 
-  return; // dừng ở đây, không chạy tiếp phần hls.js bên dưới
+  return;
   // ... toàn bộ code cũ (hls.js) giữ nguyên bên dưới, không cần xoá
 
   var videoContainer = document.getElementById("video-player");
